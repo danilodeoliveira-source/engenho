@@ -3,267 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engenho Colonial - Hyper Clicker</title>
+    <title>O Mundo do Engenho Colonial</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background-color: #1a1c23;
+            background-color: #12100e;
             color: #f0e6d2;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            min-height: 100vh;
             user-select: none;
         }
-        #game-container {
+        #ui-bar {
+            width: 800px;
+            background: #2a2016;
+            border: 3px solid #8b5a2b;
+            border-bottom: none;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        #canvas-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
             border: 4px solid #8b5a2b;
-            background-color: #2a2219;
-            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+        canvas {
+            background-color: #5c8332;
+            display: block;
+        }
+        .modal {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 700px;
+            max-height: 440px;
+            background: rgba(35, 26, 18, 0.96);
+            border: 3px solid #d4a373;
             border-radius: 8px;
-            width: 520px;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            padding: 20px;
+            box-shadow: 0 0 20px #000;
+            overflow-y: auto;
+            z-index: 10;
         }
-        .status-box {
-            background: #3d3023;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            text-align: left;
-        }
-        button {
-            background-color: #8b5a2b;
+        .modal h2 { color: #f4a261; margin-bottom: 10px; border-bottom: 2px solid #8b5a2b; padding-bottom: 5px; }
+        .modal p { font-size: 13px; line-height: 1.5; margin-bottom: 12px; color: #e0d0b8; }
+        .modal button {
+            background: #8b5a2b;
             color: #fff;
             border: none;
-            padding: 12px 15px;
-            margin: 5px;
+            padding: 8px 12px;
+            margin: 4px;
             font-family: inherit;
-            font-size: 13px;
             cursor: pointer;
             border-radius: 4px;
-            transition: background 0.2s, transform 0.1s;
-            touch-action: manipulation;
         }
-        button:active {
-            transform: scale(0.96);
-            background-color: #704720;
+        .modal button:hover { background: #a66e38; }
+        .close-btn {
+            background: #9a031e !important;
+            float: right;
         }
-        button:hover {
-            background-color: #a66e38;
-        }
-        button:disabled {
-            background-color: #4a3e35;
-            color: #888;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .upgrade-btn {
-            display: block;
-            width: 100%;
-            text-align: left;
-            margin: 8px 0;
-            padding: 10px;
-        }
-        .log {
-            font-size: 11px;
-            color: #d4a373;
+        #controls-hint {
             margin-top: 10px;
-            height: 30px;
+            font-size: 12px;
+            color: #a89f91;
+            text-align: center;
+        }
+        .mobile-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .dpad-btn {
+            width: 45px;
+            height: 45px;
+            background: #3d3023;
+            border: 2px solid #8b5a2b;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 6px;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <h2>⚡ Engenho Colonial Hyper 🌾</h2>
-        
-        <div class="status-box">
-            <p>🌾 <strong>Cana Colhida:</strong> <span id="cana">0</span> kg</p>
-            <p>📦 <strong>Sacas de Açúcar:</strong> <span id="acucar">0</span></p>
-            <p>💰 <strong>Moedas de Ouro:</strong> <span id="moedas">0</span></p>
+    <div id="ui-bar">
+        <span>📜 <span id="titulo-player">Senhor do Engenho</span></span>
+        <span>💰 Ouro: <span id="res-ouro">100</span></span>
+        <span>🌾 Cana: <span id="res-cana">0</span> kg</span>
+        <span>📦 Açúcar: <span id="res-acucar">0</span></span>
+        <span>👥 Trabalhadores: <span id="res-membros">5</span></span>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+        <!-- Modal das Estruturas -->
+        <div id="buildingModal" class="modal">
+            <button class="close-btn" onclick="fecharModal()">[X] Sair</button>
+            <h2 id="modalTitle">Nome da Estrutura</h2>
+            <div id="modalContent">Conteúdo explicativo e opções...</div>
         </div>
+    </div>
 
-        <div>
-            <button 
-                onmousedown="iniciarAcao(colherCana)" 
-                onmouseup="pararAcao()" 
-                onmouseleave="pararAcao()"
-                ontouchstart="iniciarAcao(colherCana)" 
-                ontouchend="pararAcao()">
-                1. Colher Cana
-            </button>
+    <div id="controls-hint">
+        🎮 <strong>Controles:</strong> Use as teclas <strong>W, A, S, D</strong> ou <strong>Setas</strong> para andar. Aproxime-se das instalações e pressione <strong>E</strong> para entrar.
+    </div>
 
-            <button 
-                onmousedown="iniciarAcao(moerAcucar)" 
-                onmouseup="pararAcao()" 
-                onmouseleave="pararAcao()"
-                ontouchstart="iniciarAcao(moerAcucar)" 
-                ontouchend="pararAcao()">
-                2. Moer e Ferver em Massa
-            </button>
-
-            <button 
-                onmousedown="iniciarAcao(venderAcucar)" 
-                onmouseup="pararAcao()" 
-                onmouseleave="pararAcao()"
-                ontouchstart="iniciarAcao(venderAcucar)" 
-                ontouchend="pararAcao()">
-                3. Vender Todo o Açúcar
-            </button>
-        </div>
-
-        <hr style="border-color: #8b5a2b; margin: 15px 0;">
-
-        <div>
-            <h3>Melhorias Quânticas (Máx: Nv. 5000)</h3>
-            <button class="upgrade-btn" id="btn-moenda" onclick="comprarMoenda()">
-                ⚙️ Roda de Água (Auto-Click Ultra): Nv. <span id="nv-moenda">0</span>/5000<br>
-                <small>Velocidade & Produção Multiplicadas | Custo: <span id="custo-moenda">50</span> Ouro</small>
-            </button>
-            <button class="upgrade-btn" id="btn-carro" onclick="comprarCarro()">
-                🐂 Carro de Bois (Transporte Massivo): Nv. <span id="nv-carro">0</span>/5000<br>
-                <small>Multiplicador Colossal por Clique | Custo: <span id="custo-carro">30</span> Ouro</small>
-            </button>
-        </div>
-
-        <div class="log" id="mensagem">Modo de ultra-velocidade ativado!</div>
+    <div class="mobile-controls">
+        <button class="dpad-btn" onclick="moverMobile(0, -15)">▲</button>
+        <button class="dpad-btn" onclick="moverMobile(-15, 0)">◄</button>
+        <button class="dpad-btn" onclick="moverMobile(0, 15)">▼</button>
+        <button class="dpad-btn" onclick="moverMobile(15, 0)">►</button>
+        <button class="dpad-btn" style="width:70px; background:#8b5a2b;" onclick="interagirPerto()">[E]</button>
     </div>
 
     <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Recursos e Estado do Jogador
+        let ouro = 150;
         let cana = 0;
         let acucar = 0;
-        let moedas = 0;
+        let escravizados = 5;
+        let trabalhadoresLivres = 1;
+        let tituloAtual = "Senhor do Engenho";
+        let nivelMoenda = 1;
+        let nivelCaldeira = 1;
 
-        let nivelMoenda = 0;
-        let nivelCarro = 0;
-        const MAX_NIVEL = 5000;
+        // Jogador (Senhor do Engenho)
+        const player = {
+            x: 400,
+            y: 400,
+            width: 24,
+            height: 24,
+            speed: 3,
+            color: '#e76f51'
+        };
 
-        let intervaloAcao = null;
+        // Instalações do Engenho
+        const estruturas = [
+            { id: 'casa_grande', nome: 'Casa-Grande & Gabinete', x: 340, y: 30, w: 120, h: 80, cor: '#f4a261' },
+            { id: 'canavial', nome: 'Canavial (Plantação)', x: 40, y: 300, w: 140, h: 140, cor: '#2a9d8f' },
+            { id: 'moenda', nome: 'Moenda (Roda d\'Água)', x: 260, y: 200, w: 120, h: 90, cor: '#e9c46a' },
+            { id: 'caldeiras', nome: 'Casa das Caldeiras & Fornalhas', x: 420, y: 200, w: 130, h: 90, cor: '#d62828' },
+            { id: 'purgar', nome: 'Casa de Purgar', x: 600, y: 200, w: 110, h: 90, cor: '#e0b1cb' },
+            { id: 'senzala', nome: 'Senzala & Alojamentos', x: 620, y: 40, w: 100, h: 70, cor: '#6b705c' }
+        ];
 
-        // Formata números gigantes em Notação Científica se necessário
-        function formatarNumero(num) {
-            if (num >= 1e9) {
-                return num.toExponential(4);
-            }
-            return num.toLocaleString('pt-PT', { maximumFractionDigits: 1 });
+        // Mão de Obra e Trabalhadores no Mapa
+        const trabalhadoresVisiveis = [
+            { x: 90, y: 350, zona: 'canavial', tipo: 'Campo' },
+            { x: 120, y: 380, zona: 'canavial', tipo: 'Campo' },
+            { x: 300, y: 240, zona: 'moenda', tipo: 'Moagem' },
+            { x: 470, y: 240, zona: 'caldeiras', tipo: 'Fornalha' },
+            { x: 640, y: 240, zona: 'purgar', tipo: 'Purga' }
+        ];
+
+        const keys = {};
+        let estruturaProxima = null;
+
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'e') interagirPerto();
+        });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        function atualizarRecursosUI() {
+            document.getElementById('res-ouro').innerText = Math.floor(ouro);
+            document.getElementById('res-cana').innerText = Math.floor(cana);
+            document.getElementById('res-acucar').innerText = Math.floor(acucar);
+            document.getElementById('res-membros').innerText = escravizados + trabalhadoresLivres;
+            document.getElementById('titulo-player').innerText = tituloAtual;
         }
 
-        function calcularCustoMoenda() {
-            return Math.floor(50 * Math.pow(1.06, nivelMoenda));
+        function moverMobile(dx, dy) {
+            player.x = Math.max(10, Math.min(canvas.width - player.width - 10, player.x + dx));
+            player.y = Math.max(10, Math.min(canvas.height - player.height - 10, player.y + dy));
         }
 
-        function calcularCustoCarro() {
-            return Math.floor(30 * Math.pow(1.06, nivelCarro));
-        }
-
-        // Quantidade por clique cresce exponencialmente com os níveis
-        function obterQtdCanaPorClique() {
-            let multiplicador = Math.pow(1.10, nivelCarro);
-            return 5 * multiplicador;
-        }
-
-        // Produção automática por ciclo
-        function obterQtdAutoCana() {
-            let multiplicador = Math.pow(1.12, nivelMoenda);
-            return 2 * multiplicador;
-        }
-
-        function atualizarInterface() {
-            document.getElementById('cana').innerText = formatarNumero(cana);
-            document.getElementById('acucar').innerText = formatarNumero(acucar);
-            document.getElementById('moedas').innerText = formatarNumero(moedas);
-
-            document.getElementById('nv-moenda').innerText = nivelMoenda;
-            document.getElementById('custo-moenda').innerText = nivelMoenda < MAX_NIVEL ? formatarNumero(calcularCustoMoenda()) : 'MÁX';
-            document.getElementById('btn-moenda').disabled = nivelMoenda >= MAX_NIVEL || moedas < calcularCustoMoenda();
-
-            document.getElementById('nv-carro').innerText = nivelCarro;
-            document.getElementById('custo-carro').innerText = nivelCarro < MAX_NIVEL ? formatarNumero(calcularCustoCarro()) : 'MÁX';
-            document.getElementById('btn-carro').disabled = nivelCarro >= MAX_NIVEL || moedas < calcularCustoCarro();
-        }
-
-        function log(texto) {
-            document.getElementById('mensagem').innerText = texto;
-        }
-
-        function iniciarAcao(acao) {
-            acao();
-            pararAcao();
-            // Executa a cada 10ms (velocidade máxima recomendada de clique contínuo no navegador)
-            intervaloAcao = setInterval(acao, 10);
-        }
-
-        function pararAcao() {
-            if (intervaloAcao !== null) {
-                clearInterval(intervaloAcao);
-                intervaloAcao = null;
+        function interagirPerto() {
+            if (estruturaProxima) {
+                abrirEstrutura(estruturaProxima);
             }
         }
 
-        function colherCana() {
-            let ganho = obterQtdCanaPorClique();
+        function abrirEstrutura(est) {
+            const modal = document.getElementById('buildingModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+
+            title.innerText = est.nome;
+            modal.style.display = 'block';
+
+            if (est.id === 'canavial') {
+                content.innerHTML = `
+                    <p><strong>📜 Contexto Histórico:</strong> A lavoura da cana-de-açúcar exigia solo fértil (como o massapê) e clima tropical. O trabalho no canavial era extremamente desgastante, envolvendo o corte manual da cana com facões sob o sol forte.</p>
+                    <p><strong>Ação da Plantação:</strong> Organizar a colheita no campo.</p>
+                    <button onclick="colherCanaManual()">🌾 Colher Cana (+20 kg por trabalhador)</button>
+                `;
+            } else if (est.id === 'moenda') {
+                content.innerHTML = `
+                    <p><strong>📜 Contexto Histórico:</strong> Na moenda, a cana era espremida entre cilindros de madeira ou ferro para extrair o caldo (garapa). Os engenhos podiam ser movidos a água (engenhos reais) ou por tração animal/humana (trapiches).</p>
+                    <p><strong>Produção:</strong> Converte cana bruta em garapa líquida.</p>
+                    <button onclick="moerCanaManual()">⚙️ Moer Cana (-50 kg Cana -> +20 Garapa)</button>
+                `;
+            } else if (est.id === 'caldeiras') {
+                content.innerHTML = `
+                    <p><strong>📜 Contexto Histórico:</strong> O caldo extraído era levado a grandes tachos de cobre na Casa das Caldeiras. Lá, era fervido e escumado repetidamente para purificar e evaporar a água, transformando-se num xarope espesso (melaço).</p>
+                    <button onclick="ferverCaldoManual()">🔥 Ferver Melaço (+10 Sacas de Açúcar Mascavo)</button>
+                `;
+            } else if (est.id === 'purgar') {
+                content.innerHTML = `
+                    <p><strong>📜 Contexto Histórico:</strong> O melaço denso era despejado em fôrmas cônicas de barro com um furo na base (os "pães de açúcar"). A água com barro era colocada por cima para lavar as impurezas, escorrendo o melaço restante e clareando o açúcar cristalizado.</p>
+                    <button onclick="venderAcucarProce()">💰 Vender Açúcar para Mercadores exportadores (+15 Ouro/saca)</button>
+                `;
+            } else if (est.id === 'casa_grande') {
+                content.innerHTML = `
+                    <p><strong>🏛️ Gabinete do Senhor do Engenho:</strong> Aqui você toma decisões políticas, gerencia seus títulos de nobreza e contrata mão de obra especializada.</p>
+                    <hr style="border-color:#8b5a2b; margin:10px 0;">
+                    <h3>Personalizar Título de Nobreza</h3>
+                    <p>Selecione como deseja ser reconhecido na colônia:</p>
+                    <button onclick="mudarTitulo('Senhor do Engenho')">Senhor do Engenho</button>
+                    <button onclick="mudarTitulo('Barão de Olinda')">Barão de Olinda (Custo: 200 Ouro)</button>
+                    <button onclick="mudarTitulo('Visconde do Açúcar')">Visconde do Açúcar (Custo: 500 Ouro)</button>
+                    <hr style="border-color:#8b5a2b; margin:10px 0;">
+                    <h3>Gestão de Mão de Obra</h3>
+                    <p>Adquira ou contrate força de trabalho para acelerar a produção do engenho:</p>
+                    <button onclick="adquirirTrabalhador('escravizado')">Comprar Mão de Obra Escravizada (Custo: 60 Ouro)</button>
+                    <button onclick="adquirirTrabalhador('livre')">Contratar Artesão/Trabalhador Livre (Mestre do Açúcar) (Custo: 100 Ouro)</button>
+                `;
+            } else if (est.id === 'senzala') {
+                content.innerHTML = `
+                    <p><strong>📜 Contexto Histórico:</strong> A Senzala era o local de alojamento da população escravizada. O sistema colonial baseava-se na exploração violenta e contínua dessa força de trabalho, que mantinha o funcionamento econômico de toda a América Portuguesa.</p>
+                    <p>Trabalhadores atuais sob gestão: <strong>${escravizados}</strong></p>
+                `;
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('buildingModal').style.display = 'none';
+        }
+
+        // Funções do Jogo
+        function mudarTitulo(novoTitulo) {
+            if (novoTitulo.includes('Barão') && ouro < 200) return alert('Ouro insuficiente!');
+            if (novoTitulo.includes('Visconde') && ouro < 500) return alert('Ouro insuficiente!');
+            
+            if (novoTitulo.includes('Barão')) ouro -= 200;
+            if (novoTitulo.includes('Visconde')) ouro -= 500;
+
+            tituloAtual = novoTitulo;
+            atualizarRecursosUI();
+            abrirEstrutura(estruturas.find(e => e.id === 'casa_grande'));
+        }
+
+        function adquirirTrabalhador(tipo) {
+            if (tipo === 'escravizado') {
+                if (ouro >= 60) {
+                    ouro -= 60;
+                    escravizados++;
+                    trabalhadoresVisiveis.push({ x: 60 + Math.random()*80, y: 320 + Math.random()*80, zona: 'canavial' });
+                } else alert('Ouro insuficiente!');
+            } else {
+                if (ouro >= 100) {
+                    ouro -= 100;
+                    trabalhadoresLivres++;
+                } else alert('Ouro insuficiente!');
+            }
+            atualizarRecursosUI();
+            abrirEstrutura(estruturas.find(e => e.id === 'casa_grande'));
+        }
+
+        function colherCanaManual() {
+            let ganho = (escravizados * 15) + (trabalhadoresLivres * 30);
             cana += ganho;
-            log(`Colheu +${formatarNumero(ganho)}kg de cana!`);
-            atualizarInterface();
+            atualizarRecursosUI();
+            alert(`Foram colhidos ${ganho} kg de cana-de-açúcar!`);
         }
 
-        function moerAcucar() {
-            let custoCana = 10;
-            if (cana >= custoCana) {
-                // Converte em grandes volumes proporcionalmente ao nível da moenda
-                let conversoes = Math.min(Math.floor(cana / custoCana), Math.max(1, nivelMoenda * 50));
-                cana -= custoCana * conversoes;
-                acucar += conversoes;
-                log(`Moído! +${formatarNumero(conversoes)} sacas de açúcar.`);
-                atualizarInterface();
+        function moerCanaManual() {
+            if (cana >= 50) {
+                cana -= 50;
+                acucar += 15;
+                atualizarRecursosUI();
+                alert('A cana foi moída e transformada em garapa e xarope!');
             } else {
-                log("Cana insuficiente!");
+                alert('Quantidade de cana insuficiente na colheita!');
             }
         }
 
-        function venderAcucar() {
-            if (acucar >= 1) {
+        function ferverCaldoManual() {
+            if (cana >= 20) {
+                cana -= 20;
+                acucar += 10;
+                atualizarRecursosUI();
+                alert('O caldo foi fervido nas caldeiras e purificado!');
+            } else alert('Precisa de mais caldo/cana para ferver!');
+        }
+
+        function venderAcucarProce() {
+            if (acucar >= 5) {
                 let ganho = acucar * 15;
-                moedas += ganho;
-                log(`Vendeu ${formatarNumero(acucar)} sacas por ${formatarNumero(ganho)} moedas de ouro!`);
+                ouro += ganho;
+                alert(`Vendeu ${acucar} sacas por ${ganho} moedas de ouro!`);
                 acucar = 0;
-                atualizarInterface();
-            } else {
-                log("Sem açúcar para vender.");
+                atualizarRecursosUI();
+                fecharModal();
+            } else alert('Sem açúcar pronto suficiente para exportação!');
+        }
+
+        // Loop de Atualização de Movimento e Colisões
+        function update() {
+            let speed = player.speed;
+            if (keys['w'] || keys['arrowup']) player.y = Math.max(10, player.y - speed);
+            if (keys['s'] || keys['arrowdown']) player.y = Math.min(canvas.height - player.height - 10, player.y + speed);
+            if (keys['a'] || keys['arrowleft']) player.x = Math.max(10, player.x - speed);
+            if (keys['d'] || keys['arrowright']) player.x = Math.min(canvas.width - player.width - 10, player.x + speed);
+
+            // Verificar Proximidade de Estruturas
+            estruturaProxima = null;
+            estruturas.forEach(est => {
+                if (
+                    player.x < est.x + est.w + 15 &&
+                    player.x + player.width > est.x - 15 &&
+                    player.y < est.y + est.h + 15 &&
+                    player.y + player.height > est.y - 15
+                ) {
+                    estruturaProxima = est;
+                }
+            });
+        }
+
+        // Renderização Gráfica do Mundo em Pixel Style
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar Estradas / Caminhos de terra
+            ctx.fillStyle = '#b5835a';
+            ctx.fillRect(0, 140, 800, 30);
+            ctx.fillRect(380, 0, 40, 500);
+
+            // Desenhar Rio
+            ctx.fillStyle = '#219ebc';
+            ctx.fillRect(200, 180, 30, 320);
+
+            // Desenhar Estruturas
+            estruturas.forEach(est => {
+                ctx.fillStyle = est.cor;
+                ctx.fillRect(est.x, est.y, est.w, est.h);
+                ctx.strokeStyle = '#2b1e10';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(est.x, est.y, est.w, est.h);
+
+                // Rótulo da estrutura
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText(est.nome, est.x + 5, est.y + 20);
+            });
+
+            // Desenhar Trabalhadores em Atividade
+            trabalhadoresVisiveis.forEach(t => {
+                ctx.fillStyle = '#8d5b4c';
+                ctx.fillRect(t.x, t.y, 10, 10);
+            });
+
+            // Desenhar o Jogador (Senhor do Engenho)
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(player.x, player.y, player.width, player.height);
+
+            // Indicador de Interação [E]
+            if (estruturaProxima) {
+                ctx.fillStyle = '#ffe66d';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillText(`Pressione [E] para entrar em: ${estruturaProxima.nome}`, 220, 480);
             }
         }
 
-        function comprarMoenda() {
-            let custo = calcularCustoMoenda();
-            if (moedas >= custo && nivelMoenda < MAX_NIVEL) {
-                moedas -= custo;
-                nivelMoenda++;
-                log(`Roda de Água Nv. ${nivelMoenda}! Frequência e quantidade multiplicadas!`);
-                atualizarInterface();
-            }
-        }
-
-        function comprarCarro() {
-            let custo = calcularCustoCarro();
-            if (moedas >= custo && nivelCarro < MAX_NIVEL) {
-                moedas -= custo;
-                nivelCarro++;
-                log(`Carro de Bois Nv. ${nivelCarro}! Capacidade de transporte multiplicada!`);
-                atualizarInterface();
-            }
-        }
-
-        // Loop de Auto-Click em Frequência Quântica (Simula múltiplos sub-clicks virtuais a cada 16 milissegundos)
+        // Auto-produção contínua proporcional aos trabalhadores
         setInterval(() => {
-            if (nivelMoenda > 0) {
-                // A cada nível da moenda, aumenta em centenas/milhares de cliques simultâneos por frame
-                let subClicksPorTick = Math.max(1, Math.floor(nivelMoenda * 5));
-                let ganhoPorCiclo = obterQtdAutoCana();
-                
-                cana += ganhoPorCiclo * subClicksPorTick;
-                atualizarInterface();
-            }
-        }, 16); // 60 FPS
+            cana += (escravizados * 0.2) + (trabalhadoresLivres * 0.5);
+            atualizarRecursosUI();
+        }, 1000);
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        atualizarRecursosUI();
+        gameLoop();
     </script>
 </body>
 </html>
