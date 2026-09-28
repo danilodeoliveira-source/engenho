@@ -13,6 +13,7 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            user-select: none; /* Impede a seleção de texto ao segurar o botão */
         }
         #game-container {
             border: 4px solid #8b5a2b;
@@ -34,13 +35,18 @@
             background-color: #8b5a2b;
             color: #fff;
             border: none;
-            padding: 10px 15px;
+            padding: 12px 15px;
             margin: 5px;
             font-family: inherit;
             font-size: 13px;
             cursor: pointer;
             border-radius: 4px;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
+            touch-action: manipulation;
+        }
+        button:active {
+            transform: scale(0.96);
+            background-color: #704720;
         }
         button:hover {
             background-color: #a66e38;
@@ -49,6 +55,7 @@
             background-color: #4a3e35;
             color: #888;
             cursor: not-allowed;
+            transform: none;
         }
         .log {
             font-size: 11px;
@@ -70,9 +77,33 @@
         </div>
 
         <div>
-            <button onclick="colherCana()">1. Colher Cana (+5kg)</button>
-            <button onclick="moerAcucar()">2. Moer e Ferver (-10kg Cana -> +1 Açúcar)</button>
-            <button onclick="venderAcucar()">3. Vender Açúcar (+15 Ouro/saca)</button>
+            <!-- Eventos para detetar clique único e clique mantido (rato e toque) -->
+            <button 
+                onmousedown="iniciarAcao(colherCana)" 
+                onmouseup="pararAcao()" 
+                onmouseleave="pararAcao()"
+                ontouchstart="iniciarAcao(colherCana)" 
+                ontouchend="pararAcao()">
+                1. Colher Cana (+5kg)
+            </button>
+
+            <button 
+                onmousedown="iniciarAcao(moerAcucar)" 
+                onmouseup="pararAcao()" 
+                onmouseleave="pararAcao()"
+                ontouchstart="iniciarAcao(moerAcucar)" 
+                ontouchend="pararAcao()">
+                2. Moer e Ferver (-10kg -> +1 Açúcar)
+            </button>
+
+            <button 
+                onmousedown="iniciarAcao(venderAcucar)" 
+                onmouseup="pararAcao()" 
+                onmouseleave="pararAcao()"
+                ontouchstart="iniciarAcao(venderAcucar)" 
+                ontouchend="pararAcao()">
+                3. Vender Açúcar (+15 Ouro/saca)
+            </button>
         </div>
 
         <hr style="border-color: #8b5a2b; margin: 15px 0;">
@@ -83,7 +114,7 @@
             <button id="btn-carro" onclick="comprarCarro()">Comprar Carro de Bois (Custo: 100 Ouro)</button>
         </div>
 
-        <div class="log" id="mensagem">Bem-vindo ao Engenho! Comece por colher cana-de-açúcar.</div>
+        <div class="log" id="mensagem">Pode clicar repetidamente ou segurar o botão!</div>
     </div>
 
     <script>
@@ -92,6 +123,7 @@
         let moedas = 0;
         let nivelMoenda = 0;
         let nivelCarro = 0;
+        let intervaloAcao = null;
 
         function atualizarInterface() {
             document.getElementById('cana').innerText = cana;
@@ -104,6 +136,20 @@
 
         function log(texto) {
             document.getElementById('mensagem').innerText = texto;
+        }
+
+        // Sistema para repetir a ação enquanto o botão estiver pressionado
+        function iniciarAcao(acao) {
+            acao(); // Executa imediatamente no primeiro clique
+            pararAcao(); // Limpa qualquer intervalo pendente
+            intervaloAcao = setInterval(acao, 150); // Repete a cada 150ms enquanto mantiver pressionado
+        }
+
+        function pararAcao() {
+            if (intervaloAcao !== null) {
+                clearInterval(intervaloAcao);
+                intervaloAcao = null;
+            }
         }
 
         function colherCana() {
