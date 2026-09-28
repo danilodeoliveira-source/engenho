@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engenho Colonial - Simulador</title>
+    <style>
+        body {
+            background-color: #1a1c23;
+            color: #f0e6d2;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #game-container {
+            border: 4px solid #8b5a2b;
+            background-color: #2a2219;
+            padding: 20px;
+            border-radius: 8px;
+            width: 480px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .status-box {
+            background: #3d3023;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            text-align: left;
+        }
+        button {
+            background-color: #8b5a2b;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #a66e38;
+        }
+        button:disabled {
+            background-color: #4a3e35;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .log {
+            font-size: 11px;
+            color: #d4a373;
+            margin-top: 10px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h2>🏭 Engenho Colonial Tycoon 🌾</h2>
+        
+        <div class="status-box">
+            <p>🌾 <strong>Cana Colhida:</strong> <span id="cana">0</span> kg</p>
+            <p>📦 <strong>Sacas de Açúcar:</strong> <span id="acucar">0</span></p>
+            <p>💰 <strong>Moedas de Ouro:</strong> <span id="moedas">0</span></p>
+        </div>
+
+        <div>
+            <button onclick="colherCana()">1. Colher Cana (+5kg)</button>
+            <button onclick="moerAcucar()">2. Moer e Ferver (-10kg Cana -> +1 Açúcar)</button>
+            <button onclick="venderAcucar()">3. Vender Açúcar (+15 Ouro/saca)</button>
+        </div>
+
+        <hr style="border-color: #8b5a2b; margin: 15px 0;">
+
+        <div>
+            <h3>Melhorias do Engenho</h3>
+            <button id="btn-moenda" onclick="comprarMoenda()">Construir Roda de Água (Custo: 50 Ouro)</button>
+            <button id="btn-carro" onclick="comprarCarro()">Comprar Carro de Bois (Custo: 100 Ouro)</button>
+        </div>
+
+        <div class="log" id="mensagem">Bem-vindo ao Engenho! Comece por colher cana-de-açúcar.</div>
+    </div>
+
+    <script>
+        let cana = 0;
+        let acucar = 0;
+        let moedas = 0;
+        let nivelMoenda = 0;
+        let nivelCarro = 0;
+
+        function atualizarInterface() {
+            document.getElementById('cana').innerText = cana;
+            document.getElementById('acucar').innerText = acucar;
+            document.getElementById('moedas').innerText = moedas;
+
+            document.getElementById('btn-moenda').disabled = moedas < 50;
+            document.getElementById('btn-carro').disabled = moedas < 100;
+        }
+
+        function log(texto) {
+            document.getElementById('mensagem').innerText = texto;
+        }
+
+        function colherCana() {
+            let ganho = 5 + (nivelCarro * 5);
+            cana += ganho;
+            log(`Colheu ${ganho}kg de cana-de-açúcar.`);
+            atualizarInterface();
+        }
+
+        function moerAcucar() {
+            if (cana >= 10) {
+                cana -= 10;
+                acucar += 1;
+                log("Cana moída e fervida nas caldeiras! +1 saca de açúcar.");
+                atualizarInterface();
+            } else {
+                log("Cana insuficiente! Precisa de pelo menos 10kg.");
+            }
+        }
+
+        function venderAcucar() {
+            if (acucar >= 1) {
+                let ganho = acucar * 15;
+                moedas += ganho;
+                log(`Vendeu ${acucar} sacas de açúcar por ${ganho} moedas de ouro!`);
+                acucar = 0;
+                atualizarInterface();
+            } else {
+                log("Não tem sacas de açúcar para vender.");
+            }
+        }
+
+        function comprarMoenda() {
+            if (moedas >= 50) {
+                moedas -= 50;
+                nivelMoenda++;
+                log("Roda de água instalada! A moagem de cana agora é automática.");
+                document.getElementById('btn-moenda').innerText = `Melhorar Roda de Água (Nv. ${nivelMoenda + 1})`;
+                atualizarInterface();
+            }
+        }
+
+        function comprarCarro() {
+            if (moedas >= 100) {
+                moedas -= 100;
+                nivelCarro++;
+                log("Carro de bois comprado! Aumentou o rendimento da colheita manual.");
+                document.getElementById('btn-carro').innerText = `Melhorar Transporte (Nv. ${nivelCarro + 1})`;
+                atualizarInterface();
+            }
+        }
+
+        // Loop automático (Roda de Água gera cana automaticamente)
+        setInterval(() => {
+            if (nivelMoenda > 0) {
+                cana += nivelMoenda * 2;
+                atualizarInterface();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
