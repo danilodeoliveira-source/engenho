@@ -13,14 +13,14 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
-            user-select: none; /* Impede a seleção de texto ao segurar o botão */
+            user-select: none;
         }
         #game-container {
             border: 4px solid #8b5a2b;
             background-color: #2a2219;
             padding: 20px;
             border-radius: 8px;
-            width: 480px;
+            width: 500px;
             text-align: center;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
@@ -57,6 +57,13 @@
             cursor: not-allowed;
             transform: none;
         }
+        .upgrade-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin: 8px 0;
+            padding: 10px;
+        }
         .log {
             font-size: 11px;
             color: #d4a373;
@@ -77,14 +84,13 @@
         </div>
 
         <div>
-            <!-- Eventos para detetar clique único e clique mantido (rato e toque) -->
             <button 
                 onmousedown="iniciarAcao(colherCana)" 
                 onmouseup="pararAcao()" 
                 onmouseleave="pararAcao()"
                 ontouchstart="iniciarAcao(colherCana)" 
                 ontouchend="pararAcao()">
-                1. Colher Cana (+5kg)
+                1. Colher Cana
             </button>
 
             <button 
@@ -109,40 +115,75 @@
         <hr style="border-color: #8b5a2b; margin: 15px 0;">
 
         <div>
-            <h3>Melhorias do Engenho</h3>
-            <button id="btn-moenda" onclick="comprarMoenda()">Construir Roda de Água (Custo: 50 Ouro)</button>
-            <button id="btn-carro" onclick="comprarCarro()">Comprar Carro de Bois (Custo: 100 Ouro)</button>
+            <h3>Melhorias do Engenho (Máx: Nv. 5000)</h3>
+            <button class="upgrade-btn" id="btn-moenda" onclick="comprarMoenda()">
+                ⚙️ Roda de Água (Auto-click): Nv. <span id="nv-moenda">0</span>/5000<br>
+                <small>Velocidade & Qtd: +0.5%/nv | Custo: <span id="custo-moenda">50</span> Ouro</small>
+            </button>
+            <button class="upgrade-btn" id="btn-carro" onclick="comprarCarro()">
+                🐂 Carro de Bois (Transporte): Nv. <span id="nv-carro">0</span>/5000<br>
+                <small>Qtd Colhida: +0.5%/nv | Custo: <span id="custo-carro">30</span> Ouro</small>
+            </button>
         </div>
 
-        <div class="log" id="mensagem">Pode clicar repetidamente ou segurar o botão!</div>
+        <div class="log" id="mensagem">Mantenha os botões pressionados para repetir as ações!</div>
     </div>
 
     <script>
         let cana = 0;
         let acucar = 0;
         let moedas = 0;
+
         let nivelMoenda = 0;
         let nivelCarro = 0;
+        const MAX_NIVEL = 5000;
+
         let intervaloAcao = null;
+        let timerAutoClick = null;
+
+        // Custos com progressão contínua
+        function calcularCustoMoenda() {
+            return Math.floor(50 * Math.pow(1.008, nivelMoenda));
+        }
+
+        function calcularCustoCarro() {
+            return Math.floor(30 * Math.pow(1.008, nivelCarro));
+        }
+
+        // Cálculo da quantidade transportada (+0,5% por nível do Carro de Bois)
+        function obterQtdCanaPorClique() {
+            let bonus = 1 + (nivelCarro * 0.005);
+            return Number((5 * bonus).toFixed(1));
+        }
+
+        // Aumento de quantidade e velocidade na produção automática
+        function obterQtdAutoCana() {
+            let bonus = 1 + (nivelMoenda * 0.005);
+            return Number((2 * bonus).toFixed(1));
+        }
 
         function atualizarInterface() {
-            document.getElementById('cana').innerText = cana;
-            document.getElementById('acucar').innerText = acucar;
-            document.getElementById('moedas').innerText = moedas;
+            document.getElementById('cana').innerText = cana.toLocaleString('pt-PT');
+            document.getElementById('acucar').innerText = acucar.toLocaleString('pt-PT');
+            document.getElementById('moedas').innerText = moedas.toLocaleString('pt-PT');
 
-            document.getElementById('btn-moenda').disabled = moedas < 50;
-            document.getElementById('btn-carro').disabled = moedas < 100;
+            document.getElementById('nv-moenda').innerText = nivelMoenda;
+            document.getElementById('custo-moenda').innerText = nivelMoenda < MAX_NIVEL ? calcularCustoMoenda().toLocaleString('pt-PT') : 'MÁX';
+            document.getElementById('btn-moenda').disabled = nivelMoenda >= MAX_NIVEL || moedas < calcularCustoMoenda();
+
+            document.getElementById('nv-carro').innerText = nivelCarro;
+            document.getElementById('custo-carro').innerText = nivelCarro < MAX_NIVEL ? calcularCustoCarro().toLocaleString('pt-PT') : 'MÁX';
+            document.getElementById('btn-carro').disabled = nivelCarro >= MAX_NIVEL || moedas < calcularCustoCarro();
         }
 
         function log(texto) {
             document.getElementById('mensagem').innerText = texto;
         }
 
-        // Sistema para repetir a ação enquanto o botão estiver pressionado
         function iniciarAcao(acao) {
-            acao(); // Executa imediatamente no primeiro clique
-            pararAcao(); // Limpa qualquer intervalo pendente
-            intervaloAcao = setInterval(acao, 150); // Repete a cada 150ms enquanto mantiver pressionado
+            acao();
+            pararAcao();
+            intervaloAcao = setInterval(acao, 150);
         }
 
         function pararAcao() {
@@ -153,15 +194,15 @@
         }
 
         function colherCana() {
-            let ganho = 5 + (nivelCarro * 5);
-            cana += ganho;
+            let ganho = obterQtdCanaPorClique();
+            cana = Number((cana + ganho).toFixed(1));
             log(`Colheu ${ganho}kg de cana-de-açúcar.`);
             atualizarInterface();
         }
 
         function moerAcucar() {
             if (cana >= 10) {
-                cana -= 10;
+                cana = Number((cana - 10).toFixed(1));
                 acucar += 1;
                 log("Cana moída e fervida nas caldeiras! +1 saca de açúcar.");
                 atualizarInterface();
@@ -183,32 +224,47 @@
         }
 
         function comprarMoenda() {
-            if (moedas >= 50) {
-                moedas -= 50;
+            let custo = calcularCustoMoenda();
+            if (moedas >= custo && nivelMoenda < MAX_NIVEL) {
+                moedas -= custo;
                 nivelMoenda++;
-                log("Roda de água instalada! A moagem de cana agora é automática.");
-                document.getElementById('btn-moenda').innerText = `Melhorar Roda de Água (Nv. ${nivelMoenda + 1})`;
+                log(`Roda de Água Nv. ${nivelMoenda}! Velocidade e quantidade +0.5%.`);
+                reiniciarAutoClick();
                 atualizarInterface();
             }
         }
 
         function comprarCarro() {
-            if (moedas >= 100) {
-                moedas -= 100;
+            let custo = calcularCustoCarro();
+            if (moedas >= custo && nivelCarro < MAX_NIVEL) {
+                moedas -= custo;
                 nivelCarro++;
-                log("Carro de bois comprado! Aumentou o rendimento da colheita manual.");
-                document.getElementById('btn-carro').innerText = `Melhorar Transporte (Nv. ${nivelCarro + 1})`;
+                log(`Carro de Bois Nv. ${nivelCarro}! Capacidade de transporte +0.5%.`);
                 atualizarInterface();
             }
         }
 
-        // Loop automático (Roda de Água gera cana automaticamente)
-        setInterval(() => {
-            if (nivelMoenda > 0) {
-                cana += nivelMoenda * 2;
-                atualizarInterface();
+        // Atualização da velocidade do auto-click (+0,5% de velocidade por nível)
+        function reiniciarAutoClick() {
+            if (timerAutoClick !== null) {
+                clearInterval(timerAutoClick);
+                timerAutoClick = null;
             }
-        }, 1000);
+
+            if (nivelMoenda > 0) {
+                // A frequência aumenta 0,5% por nível -> o intervalo em ms reduz proporcionalmente
+                let fatorVelocidade = 1 + (nivelMoenda * 0.005);
+                let intervaloMs = Math.max(20, Math.floor(1000 / fatorVelocidade));
+
+                timerAutoClick = setInterval(() => {
+                    let ganhoAuto = obterQtdAutoCana();
+                    cana = Number((cana + ganhoAuto).toFixed(1));
+                    atualizarInterface();
+                }, intervaloMs);
+            }
+        }
+
+        atualizarInterface();
     </script>
 </body>
 </html>
