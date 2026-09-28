@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engenho Colonial - Simulador</title>
+    <title>Engenho Colonial - Hyper Clicker</title>
     <style>
         body {
             background-color: #1a1c23;
@@ -20,7 +20,7 @@
             background-color: #2a2219;
             padding: 20px;
             border-radius: 8px;
-            width: 500px;
+            width: 520px;
             text-align: center;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
@@ -75,7 +75,7 @@
 <body>
 
     <div id="game-container">
-        <h2>🏭 Engenho Colonial Tycoon 🌾</h2>
+        <h2>⚡ Engenho Colonial Hyper 🌾</h2>
         
         <div class="status-box">
             <p>🌾 <strong>Cana Colhida:</strong> <span id="cana">0</span> kg</p>
@@ -99,7 +99,7 @@
                 onmouseleave="pararAcao()"
                 ontouchstart="iniciarAcao(moerAcucar)" 
                 ontouchend="pararAcao()">
-                2. Moer e Ferver (-10kg -> +1 Açúcar)
+                2. Moer e Ferver em Massa
             </button>
 
             <button 
@@ -108,25 +108,25 @@
                 onmouseleave="pararAcao()"
                 ontouchstart="iniciarAcao(venderAcucar)" 
                 ontouchend="pararAcao()">
-                3. Vender Açúcar (+15 Ouro/saca)
+                3. Vender Todo o Açúcar
             </button>
         </div>
 
         <hr style="border-color: #8b5a2b; margin: 15px 0;">
 
         <div>
-            <h3>Melhorias do Engenho (Máx: Nv. 5000)</h3>
+            <h3>Melhorias Quânticas (Máx: Nv. 5000)</h3>
             <button class="upgrade-btn" id="btn-moenda" onclick="comprarMoenda()">
-                ⚙️ Roda de Água (Auto-click): Nv. <span id="nv-moenda">0</span>/5000<br>
-                <small>Velocidade & Qtd: +0.5%/nv | Custo: <span id="custo-moenda">50</span> Ouro</small>
+                ⚙️ Roda de Água (Auto-Click Ultra): Nv. <span id="nv-moenda">0</span>/5000<br>
+                <small>Velocidade & Produção Multiplicadas | Custo: <span id="custo-moenda">50</span> Ouro</small>
             </button>
             <button class="upgrade-btn" id="btn-carro" onclick="comprarCarro()">
-                🐂 Carro de Bois (Transporte): Nv. <span id="nv-carro">0</span>/5000<br>
-                <small>Qtd Colhida: +0.5%/nv | Custo: <span id="custo-carro">30</span> Ouro</small>
+                🐂 Carro de Bois (Transporte Massivo): Nv. <span id="nv-carro">0</span>/5000<br>
+                <small>Multiplicador Colossal por Clique | Custo: <span id="custo-carro">30</span> Ouro</small>
             </button>
         </div>
 
-        <div class="log" id="mensagem">Mantenha os botões pressionados para repetir as ações!</div>
+        <div class="log" id="mensagem">Modo de ultra-velocidade ativado!</div>
     </div>
 
     <script>
@@ -139,40 +139,46 @@
         const MAX_NIVEL = 5000;
 
         let intervaloAcao = null;
-        let timerAutoClick = null;
 
-        // Custos com progressão contínua
+        // Formata números gigantes em Notação Científica se necessário
+        function formatarNumero(num) {
+            if (num >= 1e9) {
+                return num.toExponential(4);
+            }
+            return num.toLocaleString('pt-PT', { maximumFractionDigits: 1 });
+        }
+
         function calcularCustoMoenda() {
-            return Math.floor(50 * Math.pow(1.008, nivelMoenda));
+            return Math.floor(50 * Math.pow(1.06, nivelMoenda));
         }
 
         function calcularCustoCarro() {
-            return Math.floor(30 * Math.pow(1.008, nivelCarro));
+            return Math.floor(30 * Math.pow(1.06, nivelCarro));
         }
 
-        // Cálculo da quantidade transportada (+0,5% por nível do Carro de Bois)
+        // Quantidade por clique cresce exponencialmente com os níveis
         function obterQtdCanaPorClique() {
-            let bonus = 1 + (nivelCarro * 0.005);
-            return Number((5 * bonus).toFixed(1));
+            let multiplicador = Math.pow(1.10, nivelCarro);
+            return 5 * multiplicador;
         }
 
-        // Aumento de quantidade e velocidade na produção automática
+        // Produção automática por ciclo
         function obterQtdAutoCana() {
-            let bonus = 1 + (nivelMoenda * 0.005);
-            return Number((2 * bonus).toFixed(1));
+            let multiplicador = Math.pow(1.12, nivelMoenda);
+            return 2 * multiplicador;
         }
 
         function atualizarInterface() {
-            document.getElementById('cana').innerText = cana.toLocaleString('pt-PT');
-            document.getElementById('acucar').innerText = acucar.toLocaleString('pt-PT');
-            document.getElementById('moedas').innerText = moedas.toLocaleString('pt-PT');
+            document.getElementById('cana').innerText = formatarNumero(cana);
+            document.getElementById('acucar').innerText = formatarNumero(acucar);
+            document.getElementById('moedas').innerText = formatarNumero(moedas);
 
             document.getElementById('nv-moenda').innerText = nivelMoenda;
-            document.getElementById('custo-moenda').innerText = nivelMoenda < MAX_NIVEL ? calcularCustoMoenda().toLocaleString('pt-PT') : 'MÁX';
+            document.getElementById('custo-moenda').innerText = nivelMoenda < MAX_NIVEL ? formatarNumero(calcularCustoMoenda()) : 'MÁX';
             document.getElementById('btn-moenda').disabled = nivelMoenda >= MAX_NIVEL || moedas < calcularCustoMoenda();
 
             document.getElementById('nv-carro').innerText = nivelCarro;
-            document.getElementById('custo-carro').innerText = nivelCarro < MAX_NIVEL ? calcularCustoCarro().toLocaleString('pt-PT') : 'MÁX';
+            document.getElementById('custo-carro').innerText = nivelCarro < MAX_NIVEL ? formatarNumero(calcularCustoCarro()) : 'MÁX';
             document.getElementById('btn-carro').disabled = nivelCarro >= MAX_NIVEL || moedas < calcularCustoCarro();
         }
 
@@ -183,7 +189,8 @@
         function iniciarAcao(acao) {
             acao();
             pararAcao();
-            intervaloAcao = setInterval(acao, 150);
+            // Executa a cada 10ms (velocidade máxima recomendada de clique contínuo no navegador)
+            intervaloAcao = setInterval(acao, 10);
         }
 
         function pararAcao() {
@@ -195,19 +202,22 @@
 
         function colherCana() {
             let ganho = obterQtdCanaPorClique();
-            cana = Number((cana + ganho).toFixed(1));
-            log(`Colheu ${ganho}kg de cana-de-açúcar.`);
+            cana += ganho;
+            log(`Colheu +${formatarNumero(ganho)}kg de cana!`);
             atualizarInterface();
         }
 
         function moerAcucar() {
-            if (cana >= 10) {
-                cana = Number((cana - 10).toFixed(1));
-                acucar += 1;
-                log("Cana moída e fervida nas caldeiras! +1 saca de açúcar.");
+            let custoCana = 10;
+            if (cana >= custoCana) {
+                // Converte em grandes volumes proporcionalmente ao nível da moenda
+                let conversoes = Math.min(Math.floor(cana / custoCana), Math.max(1, nivelMoenda * 50));
+                cana -= custoCana * conversoes;
+                acucar += conversoes;
+                log(`Moído! +${formatarNumero(conversoes)} sacas de açúcar.`);
                 atualizarInterface();
             } else {
-                log("Cana insuficiente! Precisa de pelo menos 10kg.");
+                log("Cana insuficiente!");
             }
         }
 
@@ -215,11 +225,11 @@
             if (acucar >= 1) {
                 let ganho = acucar * 15;
                 moedas += ganho;
-                log(`Vendeu ${acucar} sacas de açúcar por ${ganho} moedas de ouro!`);
+                log(`Vendeu ${formatarNumero(acucar)} sacas por ${formatarNumero(ganho)} moedas de ouro!`);
                 acucar = 0;
                 atualizarInterface();
             } else {
-                log("Não tem sacas de açúcar para vender.");
+                log("Sem açúcar para vender.");
             }
         }
 
@@ -228,8 +238,7 @@
             if (moedas >= custo && nivelMoenda < MAX_NIVEL) {
                 moedas -= custo;
                 nivelMoenda++;
-                log(`Roda de Água Nv. ${nivelMoenda}! Velocidade e quantidade +0.5%.`);
-                reiniciarAutoClick();
+                log(`Roda de Água Nv. ${nivelMoenda}! Frequência e quantidade multiplicadas!`);
                 atualizarInterface();
             }
         }
@@ -239,32 +248,22 @@
             if (moedas >= custo && nivelCarro < MAX_NIVEL) {
                 moedas -= custo;
                 nivelCarro++;
-                log(`Carro de Bois Nv. ${nivelCarro}! Capacidade de transporte +0.5%.`);
+                log(`Carro de Bois Nv. ${nivelCarro}! Capacidade de transporte multiplicada!`);
                 atualizarInterface();
             }
         }
 
-        // Atualização da velocidade do auto-click (+0,5% de velocidade por nível)
-        function reiniciarAutoClick() {
-            if (timerAutoClick !== null) {
-                clearInterval(timerAutoClick);
-                timerAutoClick = null;
-            }
-
+        // Loop de Auto-Click em Frequência Quântica (Simula múltiplos sub-clicks virtuais a cada 16 milissegundos)
+        setInterval(() => {
             if (nivelMoenda > 0) {
-                // A frequência aumenta 0,5% por nível -> o intervalo em ms reduz proporcionalmente
-                let fatorVelocidade = 1 + (nivelMoenda * 0.005);
-                let intervaloMs = Math.max(20, Math.floor(1000 / fatorVelocidade));
-
-                timerAutoClick = setInterval(() => {
-                    let ganhoAuto = obterQtdAutoCana();
-                    cana = Number((cana + ganhoAuto).toFixed(1));
-                    atualizarInterface();
-                }, intervaloMs);
+                // A cada nível da moenda, aumenta em centenas/milhares de cliques simultâneos por frame
+                let subClicksPorTick = Math.max(1, Math.floor(nivelMoenda * 5));
+                let ganhoPorCiclo = obterQtdAutoCana();
+                
+                cana += ganhoPorCiclo * subClicksPorTick;
+                atualizarInterface();
             }
-        }
-
-        atualizarInterface();
+        }, 16); // 60 FPS
     </script>
 </body>
 </html>
