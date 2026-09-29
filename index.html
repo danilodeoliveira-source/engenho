@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O Mundo do Engenho Colonial</title>
+    <title>Engenho Colonial</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -98,11 +98,11 @@
 <body>
 
     <div id="ui-bar">
-        <span>📜 <span id="titulo-player">Senhor do Engenho</span></span>
-        <span>💰 Ouro: <span id="res-ouro">150</span></span>
-        <span>🌾 Cana: <span id="res-cana">0</span> kg</span>
-        <span>📦 Açúcar: <span id="res-acucar">0</span></span>
-        <span>👥 Pessoas: <span id="res-membros">6</span></span>
+        <span> <span id="titulo-player">Senhor do Engenho</span></span>
+        <span> Ouro: <span id="res-ouro">150</span></span>
+        <span> Cana: <span id="res-cana">0</span> kg</span>
+        <span> Açúcar: <span id="res-acucar">0</span></span>
+        <span> Pessoas: <span id="res-membros">6</span></span>
     </div>
 
     <div id="canvas-container">
@@ -117,7 +117,7 @@
     </div>
 
     <div id="controls-hint">
-        🎮 Use <strong>W, A, S, D</strong> para andar e <strong>E</strong> para interagir com os edifícios.
+         Use <strong>W, A, S, D</strong> para andar e <strong>E</strong> para interagir com os edifícios.
     </div>
 
     <div class="mobile-controls">
@@ -201,28 +201,28 @@
 
             if (est.id === 'canavial') {
                 content.innerHTML = `
-                    <p><strong>📜 Contexto Histórico:</strong> A lavoura da cana-de-açúcar exigia solo fértil (como o massapê) e clima tropical. O trabalho no canavial envolve o corte manual sob o sol forte.</p>
+                    <p><strong> Contexto Histórico:</strong> A lavoura da cana-de-açúcar exigia solo fértil (como o massapê) e clima tropical. O trabalho no canavial envolve o corte manual sob o sol forte.</p>
                     <p>⚡ <strong>Produção Automática:</strong> O canavial colhe cana continuamente com base na quantidade de trabalhadores.</p>
-                    <button onclick="colherCanaManual()">🌾 Acelerar Colheita (+50 kg)</button>
+                    <button onclick="colherCanaManual()"> Acelerar Colheita (+50 kg)</button>
                 `;
             } else if (est.id === 'moenda') {
                 content.innerHTML = `
-                    <p><strong>📜 Contexto Histórico:</strong> Na moenda, a cana é espremida entre cilindros para extração da garapa.</p>
+                    <p><strong> Contexto Histórico:</strong> Na moenda, a cana é espremida entre cilindros para extração da garapa.</p>
                     <button onclick="moerCanaManual()">⚙️ Moer Cana (-50 kg Cana -> +10 Açúcar)</button>
                 `;
             } else if (est.id === 'caldeiras') {
                 content.innerHTML = `
-                    <p><strong>📜 Contexto Histórico:</strong> O caldo extraído é fervido e escumado nos tachos de cobre para concentrar o melaço.</p>
-                    <button onclick="ferverCaldoManual()">🔥 Ferver Melaço (-20 kg Cana -> +5 Açúcar)</button>
+                    <p><strong> Contexto Histórico:</strong> O caldo extraído é fervido e escumado nos tachos de cobre para concentrar o melaço.</p>
+                    <button onclick="ferverCaldoManual()"> Ferver Melaço (-20 kg Cana -> +5 Açúcar)</button>
                 `;
             } else if (est.id === 'purgar') {
                 content.innerHTML = `
-                    <p><strong>📜 Contexto Histórico:</strong> O açúcar cristaliza nas fôrmas cônicas de barro (pães de açúcar) para purificação.</p>
-                    <button onclick="venderAcucarProce()">💰 Vender Açúcar (+15 Ouro/saca)</button>
+                    <p><strong> Contexto Histórico:</strong> O açúcar cristaliza nas fôrmas cônicas de barro (pães de açúcar) para purificação.</p>
+                    <button onclick="venderAcucarProce()"> Vender Açúcar (+15 Ouro/saca)</button>
                 `;
             } else if (est.id === 'casa_grande') {
                 content.innerHTML = `
-                    <p><strong>🏛️ Gabinete do Senhor do Engenho:</strong> Gerencie títulos de nobreza e contrate mão de obra para acelerar o auto click.</p>
+                    <p><strong> Gabinete do Senhor do Engenho:</strong> Gerencie títulos de nobreza e contrate mão de obra para acelerar o auto click.</p>
                     <hr style="border-color:#8b5a2b; margin:10px 0;">
                     <h3>Personalizar Título de Nobreza</h3>
                     <button onclick="mudarTitulo('Senhor do Engenho')">Senhor do Engenho</button>
@@ -235,7 +235,7 @@
                 `;
             } else if (est.id === 'senzala') {
                 content.innerHTML = `
-                    <p><strong>📜 Contexto Histórico:</strong> Local de alojamento da população escravizada que mantinha a força produtiva colonial.</p>
+                    <p><strong> Contexto Histórico:</strong> Local de alojamento da população escravizada que mantinha a força produtiva colonial.</p>
                     <p>Trabalhadores no engenho: <strong>${escravizados}</strong></p>
                 `;
             }
