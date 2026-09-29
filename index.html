@@ -1,391 +1,214 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engenho Colonial</title>
+    <title>Senhor do Engenho</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            background-color: #12100e;
-            color: #f0e6d2;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #1a1a1a;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            user-select: none;
+            font-family: 'Courier New', Courier, monospace;
+            color: #ffffff;
         }
-        #ui-bar {
-            width: 800px;
-            background: #2a2016;
-            border: 3px solid #8b5a2b;
-            border-bottom: none;
-            padding: 10px 15px;
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        #canvas-container {
+
+        #game-container {
             position: relative;
-            width: 800px;
-            height: 500px;
-            border: 4px solid #8b5a2b;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-        }
-        canvas {
-            background-color: #5c8332;
-            display: block;
-        }
-        .modal {
-            display: none;
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 700px;
-            max-height: 440px;
-            background: rgba(35, 26, 18, 0.96);
-            border: 3px solid #d4a373;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 0 20px #000;
-            overflow-y: auto;
-            z-index: 10;
-        }
-        .modal h2 { color: #f4a261; margin-bottom: 10px; border-bottom: 2px solid #8b5a2b; padding-bottom: 5px; }
-        .modal p { font-size: 13px; line-height: 1.5; margin-bottom: 12px; color: #e0d0b8; }
-        .modal button {
-            background: #8b5a2b;
-            color: #fff;
-            border: none;
-            padding: 8px 12px;
-            margin: 4px;
-            font-family: inherit;
-            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            border: 4px solid #4a2f13;
             border-radius: 4px;
+            overflow: hidden;
+            background-color: #5a8a3c;
         }
-        .modal button:hover { background: #a66e38; }
-        .close-btn {
-            background: #9a031e !important;
-            float: right;
-        }
-        #controls-hint {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #a89f91;
-            text-align: center;
-        }
-        .mobile-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .dpad-btn {
-            width: 45px;
-            height: 45px;
-            background: #3d3023;
-            border: 2px solid #8b5a2b;
-            color: #fff;
-            font-weight: bold;
-            border-radius: 6px;
-            font-size: 16px;
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
     </style>
 </head>
 <body>
 
-    <div id="ui-bar">
-        <span> <span id="titulo-player">Senhor do Engenho</span></span>
-        <span> Ouro: <span id="res-ouro">150</span></span>
-        <span> Cana: <span id="res-cana">0</span> kg</span>
-        <span> Açúcar: <span id="res-acucar">0</span></span>
-        <span> Pessoas: <span id="res-membros">6</span></span>
-    </div>
+<div id="game-container">
+    <canvas id="gameCanvas" width="850" height="550"></canvas>
+</div>
 
-    <div id="canvas-container">
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-        <!-- Modal das Estruturas -->
-        <div id="buildingModal" class="modal">
-            <button class="close-btn" onclick="fecharModal()">[X] Sair</button>
-            <h2 id="modalTitle">Nome da Estrutura</h2>
-            <div id="modalContent">Conteúdo explicativo e opções...</div>
-        </div>
-    </div>
+// --- CARREGAMENTO DAS IMAGENS EM BASE64 ---
 
-    <div id="controls-hint">
-         Use <strong>W, A, S, D</strong> para andar e <strong>E</strong> para interagir com os edifícios.
-    </div>
+// 1. Casa Grande
+const imgCasaGrande = new Image();
+imgCasaGrande.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAyCAYAAADLLVz8AAABmElEQVR4nO2Yr1LDQBCHD4ZBgOEJ0H0IDIgY0BUodEV1ayJqWo3gERDVYCLAIHiEiqo+QU0RmOIY5mia3du7vU36+1SnuT873+xl9+IcAAAA0FXeer1t7hj2cZQ7gDp2ibtZLMzFay4gSsZZEmkmkJCjakFk1gBivt9yycyyacrCoC1SdTPNiqolUmWTnK1IapFJF7fUw6USmWRRS+J8YouMuphlcT6xREZZpE3ifKQigye3WVodITLZE7oozocjkjzwEMT5UEQ2Dlh+zg9O3F9WD+VekceawbSRpiw84S44eD4Lj6YlPN1/kceyi0gxfOn8ka4e78hecISFsDNwvfnufAZenJ8iA7WAQCHsKlxHf1z9+28+Ldjjdj2PsS53HJVoAp1zbjK6/f1dzl6Dx62qsnbuZTFJvj8HHGEhECgEAoVAoBAIFAKBQqK2MdSWQNo6WNrf3F24P64a+0BJ40sBd2FFIFAIBAqBQCFmisjHe/NXGJ+r6zTFBEVEEQgUAoFC2DcRyhfjEIYBr7NUsXBABgqBQJCXHyd6iABumqtCAAAAAElFTkSuQmCC';
 
-    <div class="mobile-controls">
-        <button class="dpad-btn" onclick="moverMobile(0, -15)">▲</button>
-        <button class="dpad-btn" onclick="moverMobile(-15, 0)">◄</button>
-        <button class="dpad-btn" onclick="moverMobile(0, 15)">▼</button>
-        <button class="dpad-btn" onclick="moverMobile(15, 0)">►</button>
-        <button class="dpad-btn" style="width:70px; background:#8b5a2b;" onclick="interagirPerto()">[E]</button>
-    </div>
+// 2. Senzala
+const imgSenzala = new Image();
+imgSenzala.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEYAAAAjCAYAAAApF3xtAAAA0klEQVR4nO3XvQ2CQACGYTTuYWEDa7CBNRswEBtQuwFrSEPhJFphiPJ5XrhffZ+KwMFd3hwkFAUA/ImhLO+x1zDbxZz8mxD1OEZZY9BJXeyIUKG8ThLi1fAVyvlDY34nXEba/KCUPpivtoSyvjHlECY2oYwDcw5h8inU24U5xOnS+VxTMqZz+zxehpLFbtfhZ3fK0rGqVxvsQy8kF4QRCCMQRjjY3tA07er5vu+yGmfCjhEIIxBGIIxAGIEwAmEEwgj8XfN3bYcwAmEEwgiEAZx4AHkIPD6mNQFXAAAAAElFTkSuQmCC';
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+// 3. Moenda
+const imgMoenda = new Image();
+imgMoenda.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAA3CAYAAACb4M1PAAAB3klEQVR4nO2ZoVbDMBSGbzkoNA9RxROA4QmmEPUzs0VMVVRVMIuZn0DtCTDsCab6EGjsEJxAlyXlpjdt0+b/1M5pd5vznT+5bUIEAAAAAABAgLyn6WnsMbSRjD0AE23SHus6qDEHM5guSQtB5qgD8Dk9x5I5+EOHWNOGlDnIg8ZsBH3L7K14iN2zD5leC4YozYYvmeIiU5JmQyKz0x/nIM2Gq0z2zUra7bZ0HdPk+FwWRMSTec0tqoodiWabPoVLClk3rhf2KZvl80vk3cOTH4Ft4nTmJNJF4JXtgos8IqLdpnC5fTYYBZrkVfs6qfZ/a4MpcTFKvBCoy9PFNcny8kJkbBLPurBJHqdIlpdn4nabgg71V+dBvW5frNdWy+fOdV2ew8W6BnLlKSTCpsyvQNem8R/36Y3PcsFiTKBr+hQxptA6hQEP46ccZzrr3TaWKauDBAoxJrBtDVTp1N//1OtFbElkf4lwiE0eUUNg185rI5aO7G0zIcb0EWkC9RRyJeodOZb0ERmaSLWvk6Y49ds0xU0bBzHJI3L4Elkv0lNTLOT9gM0EIa2HSkoi50zk4HGbaUqwTuWaaTx+vM3+VM4FfMoJgUAhECgEAoVAoBAIFAKBQiBQCAQCAADozDc87bHQ/UAhIQAAAABJRU5ErkJggg==';
 
-        // Recursos e Estado
-        let ouro = 150;
-        let cana = 0;
-        let acucar = 0;
-        let escravizados = 5;
-        let trabalhadoresLivres = 1;
-        let tituloAtual = "Senhor do Engenho";
+// 4. Casa das Caldeiras & Fornalhas (Pixel Art)
+const imgCaldeiras = new Image();
+imgCaldeiras.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAAkCAYAAADGrhlwAAABp0lEQVR4nO1XIVvDMBC98oGpwdRgYkDUbAaDwDAdCwYzjeAnTPATEGgMZrNRiM1M1GCKidhMzUwNJgZRxL7u65at3LVNW0KfuvS7vOvru15aBwgQQojsmnPOKfvr4D+mbmCMeWkchmHQ7/evqBwmcdT0DVQNh7ohDMMgu26bQyRBr9d+4p26W9fiLwXDuSQ/GFP81rVcJ6jt6AQVxdT3kzrqkA5WFSmA3noKRZ8xsJ6Xm//CWOK763yp1EaUVAoeokibXFT+fSAJcpleTEVKy5v6fiKVgqyY3TjNyQrD8uehkvMDQHejSDyQ5c+zUgTZFiorZjcuKq7QpircMCUMnWzSDWy8b5CQBGFe7qbiQ87tvdgGN4oK2ywWwbiWg88UouEIBlI61nz6pE5pLbf4EH/KqYtLvqXBGodSoD997vg9mnQs3hrjRDlEKYzNN8EJgBBELYzZZ4IzBbrlnm7P0YVHk2VjnNYNBesEoVtuNFmCuDn5NY/PvtHFTXD+X4eyOHvU//VXz3GpG6mK0zqHOkFth3WCtKEwn70fTN6Mz9kKRZ7HZYrzB4MeW7ZJ2bWqAAAAAElFTkSuQmCC';
 
-        // Jogador
-        const player = {
-            x: 400,
-            y: 400,
-            width: 24,
-            height: 24,
-            speed: 3.5,
-            color: '#e76f51'
-        };
+// 5. Casa de Purgar (Pixel Art)
+const imgPurgar = new Image();
+imgPurgar.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAAkCAYAAADGrhlwAAABb0lEQVR4nO1Vr3vCMBA99lGDmZqYYaYiZir/AaZmBoNGzyDm+Q8mMNPTGAwTnejsTA0qooZaPLZT5SuFhPy4C1uXZ3L5LrmX63tNAAICAgICEJAxVvng6VEWfxsOKzYYAACA2O+hGT+XJQk3etFaiXYDqngkBNo5UApljFUmDahi1+asN6vshBXb2NJog42dsGJd5S4uwrSTD1ueTfiwE5UtD5Pie+nlnaBCOZ3DSIjezbUPgoXahieW223zP6XU3QM/6qEzCtUIDf129HUWjZMnaW6VrtEOg8F3USFVcZ28KVz5tBRqIs0LSHistXY2GUtzi+UKnQ+A8B9SNaOTt4VRQ2leHI3UsOHr3C2n3VD7K1GrZMv3/xTKNlsAAEh4DAmPIYqiQ9zMY8GVT+vabj9mFI8pFp9Sodv7R6PRFRh80oZeZ1MonuSmw6istN59wo7krTPheFu9na0gbkm2gAhZf567tE4W+Pj+8kVNw/QCWxS9No54NcgAAAABJRU5ErkJggg==';
 
-        // Instalações
-        const estruturas = [
-            { id: 'casa_grande', nome: 'Casa-Grande & Gabinete', x: 340, y: 30, w: 120, h: 80, cor: '#f4a261' },
-            { id: 'canavial', nome: 'Canavial (Plantação)', x: 40, y: 300, w: 140, h: 140, cor: '#2a9d8f' },
-            { id: 'moenda', nome: 'Moenda (Roda d\'Água)', x: 260, y: 200, w: 120, h: 90, cor: '#e9c46a' },
-            { id: 'caldeiras', nome: 'Casa das Caldeiras & Fornalhas', x: 420, y: 200, w: 130, h: 90, cor: '#d62828' },
-            { id: 'purgar', nome: 'Casa de Purgar', x: 600, y: 200, w: 110, h: 90, cor: '#e0b1cb' },
-            { id: 'senzala', nome: 'Senzala & Alojamentos', x: 620, y: 40, w: 100, h: 70, cor: '#6b705c' }
-        ];
+// 6. Canavial / Plantação (Pixel Art)
+const imgCanavial = new Image();
+imgCanavial.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAD5UlEQVR4nN1arX/bMBB93a8hJiEmI8bGxsbBwcX+I4YGioqLA4qKA4aKA4YMioxNSkxCRAwykNmRT3fSKXG6NY/5+XQfkio9XwNYKF/yQ/VeHta/ioPNV+/lQWPHvXv5XTo2lOf8xcSwcQ8A+eq788LmSgPsrOfudQ8UKZrnD3Ys9SHZhOJKnBS/efu4++YYAmieP6QcR5SG52N8+MaE/Ejx7+2HLF+iNECbLx3DTMkNwWwfkp3Nc3GlXOj4ttmP3DfJeC7sdm0UfylUBXHBtQmVZRbFayHFdwraJYzVyg1elhmyKlUFk+xCCfomTZqQsaD0YbpXk1UCU8DhAIg8DRayo2No4ees4lhQ97ofE0hWCcybQVLD4QAgqYFN0zk8hdZOKpzdLdqC5oJme1HQwrtuWjhdWV+MybGd1AAKINv0ABZHsj3O4IQDUDwsscOJr9c9iu0CQyrJKkG26R07ADCPS8AAeXvyVxf9yff26M/2I8Wgq+6sEHdhcVz9tJ/wdhLbzvxNYmo3vB/4tlpMxmMsnIcUw1vQNWEn1FYLJyE6QYC/QA73HNlkUycFw3H8sGXNm0GTyXbaOA8GeCU2UowBs6+QpLEmCQHiiXdpjE/dcgNCRV8CVylE3Nha+TO3nQ/uKcfczjF6jEtKe+NTu3Mmcv4tx+g+imsKW53aVkiQWN0GnKcqQvAWFErSLlTSfRwGmSP51UCaDG9BUpIxq8GhylN18RSh2M7FuktkjTXyLVitJek+4Dijyc89OAx+aezhnXlcnsa2wGbdIS9Sv5aj30ODzoqVIPSOqdc96qdTIW21QP20n/i1NZ4dm25NW/tJYL+HqM7iLkJtoT79NviVbHy8FJvVcsBUU0lajNNakm2MX2l8SOcB5FCYQ2dx0PiVbGJzUn0PzQGNX8kmJif22KZnfMy3fYweu0ZvblIQPeODF+sFui3WlkLVl6PNitDtH5OQZjXoThh2CtfnC/bl5oK0PX3Fh3ZGl6cszykUp6BqGGz14OznAfTvTAomaS6bpzuBPq/TxLHbdoY9+dgVoqeK/SwlTpOgvbVtN48ODEG8WDlNBWCi406tpOM7X29tnSao214eT3Wg/fxjGt8UGP3RS9hZIVt3xcInSTR+pZ1Bx5ZG9nfWoeBLXNNbO7fnpoGz5ZqsdzQWp7kkLaXprUm8Jq6PB4QVouf+tf7bdg3wpxy5M+a+QLVjP7XrIzm9pBWlnciLuz6xTjV2l/6PVcI/aQVfEzdXkHNsDzeyqBQCnHas1mdoLD2+74DTb2myfCk6+F/RZP34SxLntz63AFYpfGXc9grZv2r6qri5Fbo5/AF7Zas41DHaeAAAAABJRU5ErkJggg==';
 
-        const trabalhadoresVisiveis = [
-            { x: 90, y: 350 }, { x: 120, y: 380 },
-            { x: 300, y: 240 }, { x: 470, y: 240 }, { x: 640, y: 240 }
-        ];
+// --- ESTADO DO JOGO ---
+const gameState = {
+    ouro: 150,
+    cana: 504,
+    acucar: 138,
+    pessoas: 6,
+    player: {
+        x: 420,
+        y: 280,
+        speed: 2.5,
+        width: 16,
+        height: 16
+    },
+    nearbyBuilding: null
+};
 
-        const keys = {};
-        let estruturaProxima = null;
+// Teclas pressionadas
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-        window.addEventListener('keydown', e => {
-            keys[e.key.toLowerCase()] = true;
-            if (e.key.toLowerCase() === 'e') interagirPerto();
-        });
-        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+// Definição dos edifícios no mapa
+const buildings = [
+    { name: "Casa Grande", x: 360, y: 70, w: 120, h: 75, img: imgCasaGrande },
+    { name: "Senzala", x: 600, y: 120, w: 110, h: 55, img: imgSenzala },
+    { name: "Moenda (Roda d'Água)", x: 280, y: 260, w: 120, h: 80, img: imgMoenda },
+    { name: "Casa das Caldeiras & Fornalhas", x: 450, y: 250, w: 130, h: 90, img: imgCaldeiras },
+    { name: "Casa de Purgar", x: 640, y: 250, w: 130, h: 90, img: imgPurgar },
+    { name: "Canavial (Plantação)", x: 50, y: 340, w: 150, h: 150, img: imgCanavial }
+];
 
-        function atualizarRecursosUI() {
-            document.getElementById('res-ouro').innerText = Math.floor(ouro);
-            document.getElementById('res-cana').innerText = Math.floor(cana);
-            document.getElementById('res-acucar').innerText = Math.floor(acucar);
-            document.getElementById('res-membros').innerText = escravizados + trabalhadoresLivres;
-            document.getElementById('titulo-player').innerText = tituloAtual;
+// --- LOOP PRINCIPAL DO JOGO ---
+function update() {
+    // Movimentação do Jogador
+    if (keys['w'] || keys['arrowup']) gameState.player.y -= gameState.player.speed;
+    if (keys['s'] || keys['arrowdown']) gameState.player.y += gameState.player.speed;
+    if (keys['a'] || keys['arrowleft']) gameState.player.x -= gameState.player.speed;
+    if (keys['d'] || keys['arrowright']) gameState.player.x += gameState.player.speed;
+
+    // Restrições de borda do mapa
+    gameState.player.x = Math.max(10, Math.min(canvas.width - 20, gameState.player.x));
+    gameState.player.y = Math.max(50, Math.min(canvas.height - 50, gameState.player.y));
+
+    // Verificar proximidade com edifícios
+    gameState.nearbyBuilding = null;
+    buildings.forEach(b => {
+        const dx = (gameState.player.x) - (b.x + b.w / 2);
+        const dy = (gameState.player.y) - (b.y + b.h / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 90) {
+            gameState.nearbyBuilding = b.name;
         }
+    });
+}
 
-        function moverMobile(dx, dy) {
-            player.x = Math.max(10, Math.min(canvas.width - player.width - 10, player.x + dx));
-            player.y = Math.max(10, Math.min(canvas.height - player.height - 10, player.y + dy));
+function render() {
+    // 1. Fundo (Grama)
+    ctx.fillStyle = '#558237';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Rio
+    ctx.fillStyle = '#3092c7';
+    ctx.fillRect(210, 40, 45, canvas.height);
+
+    // 3. Estradas de Terra
+    ctx.fillStyle = '#ad8054';
+    // Estrada Horizontal Principal
+    ctx.fillRect(10, 210, canvas.width - 20, 35);
+    // Entrada Casa Grande
+    ctx.fillRect(410, 140, 35, 75);
+    // Entrada Sul
+    ctx.fillRect(410, 245, 35, 305);
+    // Ramal Moenda
+    ctx.fillRect(250, 310, 160, 25);
+
+    // 4. Ponte de Madeira sobre o Rio
+    ctx.fillStyle = '#6b462b';
+    ctx.fillRect(205, 205, 55, 45);
+    ctx.fillStyle = '#4a2f1a';
+    ctx.fillRect(205, 205, 55, 4);
+    ctx.fillRect(205, 246, 55, 4);
+
+    // 5. Desenhar Edifícios
+    buildings.forEach(b => {
+        if (b.img.complete && b.img.naturalWidth !== 0) {
+            ctx.drawImage(b.img, b.x, b.y, b.w, b.h);
+        } else {
+            // Fallback de carregamento
+            ctx.fillStyle = '#8b5a2b';
+            ctx.fillRect(b.x, b.y, b.w, b.h);
         }
+    });
 
-        function interagirPerto() {
-            if (estruturaProxima) abrirEstrutura(estruturaProxima);
-        }
+    // 6. Jogador (Pixel Personagem)
+    ctx.fillStyle = '#783819'; // Sombra
+    ctx.beginPath();
+    ctx.ellipse(gameState.player.x + 8, gameState.player.y + 15, 6, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-        function abrirEstrutura(est) {
-            const modal = document.getElementById('buildingModal');
-            const title = document.getElementById('modalTitle');
-            const content = document.getElementById('modalContent');
+    ctx.fillStyle = '#d9a25f'; // Corpo/Roupas
+    ctx.fillRect(gameState.player.x + 4, gameState.player.y + 6, 8, 8);
+    ctx.fillStyle = '#ffe0bd'; // Cabeça
+    ctx.fillRect(gameState.player.x + 4, gameState.player.y + 1, 8, 5);
 
-            title.innerText = est.nome;
-            modal.style.display = 'block';
+    // 7. Barra de Recursos Superior
+    ctx.fillStyle = '#2c1a0c';
+    ctx.fillRect(0, 0, canvas.width, 42);
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 15px "Courier New", monospace';
+    
+    ctx.fillText('Senhor do Engenho', 20, 26);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`Ouro: ${gameState.ouro}`, 240, 26);
+    ctx.fillText(`🌾 Cana: ${gameState.cana} kg`, 370, 26);
+    ctx.fillText(`📦 Açúcar: ${gameState.acucar}`, 570, 26);
+    ctx.fillText(`Pessoas: ${gameState.pessoas}`, 720, 26);
 
-            if (est.id === 'canavial') {
-                content.innerHTML = `
-                    <p><strong> Contexto Histórico:</strong> A lavoura da cana-de-açúcar exigia solo fértil (como o massapê) e clima tropical. O trabalho no canavial envolve o corte manual sob o sol forte.</p>
-                    <p>⚡ <strong>Produção Automática:</strong> O canavial colhe cana continuamente com base na quantidade de trabalhadores.</p>
-                    <button onclick="colherCanaManual()"> Acelerar Colheita (+50 kg)</button>
-                `;
-            } else if (est.id === 'moenda') {
-                content.innerHTML = `
-                    <p><strong> Contexto Histórico:</strong> Na moenda, a cana é espremida entre cilindros para extração da garapa.</p>
-                    <button onclick="moerCanaManual()">⚙️ Moer Cana (-50 kg Cana -> +10 Açúcar)</button>
-                `;
-            } else if (est.id === 'caldeiras') {
-                content.innerHTML = `
-                    <p><strong> Contexto Histórico:</strong> O caldo extraído é fervido e escumado nos tachos de cobre para concentrar o melaço.</p>
-                    <button onclick="ferverCaldoManual()"> Ferver Melaço (-20 kg Cana -> +5 Açúcar)</button>
-                `;
-            } else if (est.id === 'purgar') {
-                content.innerHTML = `
-                    <p><strong> Contexto Histórico:</strong> O açúcar cristaliza nas fôrmas cônicas de barro (pães de açúcar) para purificação.</p>
-                    <button onclick="venderAcucarProce()"> Vender Açúcar (+15 Ouro/saca)</button>
-                `;
-            } else if (est.id === 'casa_grande') {
-                content.innerHTML = `
-                    <p><strong> Gabinete do Senhor do Engenho:</strong> Gerencie títulos de nobreza e contrate mão de obra para acelerar o auto click.</p>
-                    <hr style="border-color:#8b5a2b; margin:10px 0;">
-                    <h3>Personalizar Título de Nobreza</h3>
-                    <button onclick="mudarTitulo('Senhor do Engenho')">Senhor do Engenho</button>
-                    <button onclick="mudarTitulo('Barão de Olinda')">Barão de Olinda (200 Ouro)</button>
-                    <button onclick="mudarTitulo('Visconde do Açúcar')">Visconde do Açúcar (500 Ouro)</button>
-                    <hr style="border-color:#8b5a2b; margin:10px 0;">
-                    <h3>Gestão de Mão de Obra</h3>
-                    <button onclick="adquirirTrabalhador('escravizado')">Adquirir Mão de Obra Escravizada (60 Ouro)</button>
-                    <button onclick="adquirirTrabalhador('livre')">Contratar Mestre do Açúcar (100 Ouro)</button>
-                `;
-            } else if (est.id === 'senzala') {
-                content.innerHTML = `
-                    <p><strong> Contexto Histórico:</strong> Local de alojamento da população escravizada que mantinha a força produtiva colonial.</p>
-                    <p>Trabalhadores no engenho: <strong>${escravizados}</strong></p>
-                `;
-            }
-        }
+    // 8. Prompt de Interação
+    if (gameState.nearbyBuilding) {
+        ctx.fillStyle = '#ffff00';
+        ctx.font = 'bold 16px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Pressione [E] para entrar em: ${gameState.nearbyBuilding}`, canvas.width / 2, canvas.height - 25);
+        ctx.textAlign = 'left';
+    }
+}
 
-        function fecharModal() {
-            document.getElementById('buildingModal').style.display = 'none';
-        }
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+}
 
-        function mudarTitulo(novoTitulo) {
-            if (novoTitulo.includes('Barão') && ouro >= 200) { ouro -= 200; tituloAtual = novoTitulo; }
-            else if (novoTitulo.includes('Visconde') && ouro >= 500) { ouro -= 500; tituloAtual = novoTitulo; }
-            else if (novoTitulo === 'Senhor do Engenho') { tituloAtual = novoTitulo; }
-            atualizarRecursosUI();
-            abrirEstrutura(estruturas.find(e => e.id === 'casa_grande'));
-        }
+// Inicia o loop
+gameLoop();
+</script>
 
-        function adquirirTrabalhador(tipo) {
-            if (tipo === 'escravizado' && ouro >= 60) {
-                ouro -= 60;
-                escravizados++;
-                trabalhadoresVisiveis.push({ x: 60 + Math.random()*80, y: 320 + Math.random()*80 });
-            } else if (tipo === 'livre' && ouro >= 100) {
-                ouro -= 100;
-                trabalhadoresLivres++;
-            }
-            atualizarRecursosUI();
-            abrirEstrutura(estruturas.find(e => e.id === 'casa_grande'));
-        }
-
-        // Ações manuais rápidas sem caixa de diálogo/alert
-        function colherCanaManual() {
-            cana += 50;
-            atualizarRecursosUI();
-        }
-
-        function moerCanaManual() {
-            if (cana >= 50) {
-                cana -= 50;
-                acucar += 10;
-                atualizarRecursosUI();
-            }
-        }
-
-        function ferverCaldoManual() {
-            if (cana >= 20) {
-                cana -= 20;
-                acucar += 5;
-                atualizarRecursosUI();
-            }
-        }
-
-        function venderAcucarProce() {
-            if (acucar >= 1) {
-                ouro += acucar * 15;
-                acucar = 0;
-                atualizarRecursosUI();
-            }
-        }
-
-        function update() {
-            let speed = player.speed;
-            if (keys['w'] || keys['arrowup']) player.y = Math.max(10, player.y - speed);
-            if (keys['s'] || keys['arrowdown']) player.y = Math.min(canvas.height - player.height - 10, player.y + speed);
-            if (keys['a'] || keys['arrowleft']) player.x = Math.max(10, player.x - speed);
-            if (keys['d'] || keys['arrowright']) player.x = Math.min(canvas.width - player.width - 10, player.x + speed);
-
-            estruturaProxima = null;
-            estruturas.forEach(est => {
-                if (
-                    player.x < est.x + est.w + 15 &&
-                    player.x + player.width > est.x - 15 &&
-                    player.y < est.y + est.h + 15 &&
-                    player.y + player.height > est.y - 15
-                ) {
-                    estruturaProxima = est;
-                }
-            });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Caminhos
-            ctx.fillStyle = '#b5835a';
-            ctx.fillRect(0, 140, 800, 30);
-            ctx.fillRect(380, 0, 40, 500);
-
-            // Rio
-            ctx.fillStyle = '#219ebc';
-            ctx.fillRect(200, 180, 30, 320);
-
-            // Estruturas
-            estruturas.forEach(est => {
-                ctx.fillStyle = est.cor;
-                ctx.fillRect(est.x, est.y, est.w, est.h);
-                ctx.strokeStyle = '#2b1e10';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(est.x, est.y, est.w, est.h);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 11px sans-serif';
-                ctx.fillText(est.nome, est.x + 5, est.y + 20);
-            });
-
-            // Trabalhadores
-            trabalhadoresVisiveis.forEach(t => {
-                ctx.fillStyle = '#8d5b4c';
-                ctx.fillRect(t.x, t.y, 10, 10);
-            });
-
-            // Jogador
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(player.x, player.y, player.width, player.height);
-
-            if (estruturaProxima) {
-                ctx.fillStyle = '#ffe66d';
-                ctx.font = 'bold 14px sans-serif';
-                ctx.fillText(`Pressione [E] para entrar em: ${estruturaProxima.nome}`, 220, 480);
-            }
-        }
-
-        // SISTEMA DE AUTO CLICK CORRIGIDO E FLUIDO
-        // Executa continuamente em background acelerando conforme os trabalhadores
-        setInterval(() => {
-            // 1. Produção contínua de cana
-            let taxaCana = (escravizados * 1.5) + (trabalhadoresLivres * 4.0);
-            cana += taxaCana;
-
-            // 2. Auto-moagem e produção contínua de açúcar
-            let taxaConversao = Math.min(cana, trabalhadoresLivres * 3 + escravizados * 0.5);
-            if (taxaConversao > 0) {
-                cana -= taxaConversao;
-                acucar += taxaConversao * 0.3;
-            }
-
-            atualizarRecursosUI();
-        }, 300); // Roda a cada 300 milissegundos
-
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        atualizarRecursosUI();
-        gameLoop();
-    </script>
 </body>
 </html>
