@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senhor do Engenho</title>
+    <title>Engenho Colonial</title>
     <style>
         * {
             box-sizing: border-box;
@@ -75,14 +75,14 @@ imgCanavial.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAAD
 
 // --- ESTADO DO JOGO ---
 const gameState = {
-    ouro: 150,
-    cana: 504,
-    acucar: 138,
-    pessoas: 6,
+    ouro: 99999999999999999999999999999999999999999999999999999,
+    cana: 99999999999999999999999999999999999999999999999999999,
+    acucar: 99999999999999999999999999999999999999999999999999999,
+    pessoas: 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,
     player: {
         x: 420,
         y: 280,
-        speed: 2.5,
+        speed: 5,
         width: 16,
         height: 16
     },
@@ -186,8 +186,8 @@ function render() {
     ctx.fillText('Senhor do Engenho', 20, 26);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(`Ouro: ${gameState.ouro}`, 240, 26);
-    ctx.fillText(`🌾 Cana: ${gameState.cana} kg`, 370, 26);
-    ctx.fillText(`📦 Açúcar: ${gameState.acucar}`, 570, 26);
+    ctx.fillText(` Cana: ${gameState.cana} kg`, 370, 26);
+    ctx.fillText(` Açúcar: ${gameState.acucar}`, 570, 26);
     ctx.fillText(`Pessoas: ${gameState.pessoas}`, 720, 26);
 
     // 8. Prompt de Interação
@@ -201,13 +201,16 @@ function render() {
 }
 
 function gameLoop() {
-    update();
-    render();
+    update(7);
+    render(7);
     requestAnimationFrame(gameLoop);
 }
-
+function autoClick() {
+    speed(99999999999999999999999999999999999999)
+    when click on a butyon autoClick(on)
+    when stop click on a button autoClick(off)
 // Inicia o loop
-gameLoop();
+gameLoop(7);
 </script>
 
 </body>
